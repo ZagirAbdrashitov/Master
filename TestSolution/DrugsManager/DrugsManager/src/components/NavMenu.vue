@@ -18,9 +18,6 @@
                             <router-link :to="{ name: 'Drugs' }" class="nav-link text-dark">Drugs</router-link>
                         </li>
                         <li class="nav-item">
-                            <router-link :to="{ name: 'Management' }" class="nav-link text-dark">Management</router-link>
-                        </li>
-                        <li class="nav-item">
                             <router-link :to="{ name: 'Data' }" class="nav-link text-dark">Data</router-link>
                         </li>
                     </ul>
