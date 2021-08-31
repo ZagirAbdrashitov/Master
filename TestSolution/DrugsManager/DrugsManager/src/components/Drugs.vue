@@ -84,10 +84,10 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" @click="createClick()" v-if="packSize==0" class="btn btn-primary" data-dismiss="modal">
+                    <button type="button" @click="createClick()" v-if="id==-1" class="btn btn-primary" data-dismiss="modal">
                         Create
                     </button>
-                    <button type="button" @click="updateClick()" v-if="packSize!=0" class="btn btn-primary" data-dismiss="modal">
+                    <button type="button" @click="updateClick()" v-if="id!=-1" class="btn btn-primary" data-dismiss="modal">
                         Update
                     </button>
                 </div>
@@ -106,7 +106,7 @@
                 units: ['Small Pack', 'Medium Pack', 'Large Pack'],
                 drugs: [],
                 modalTitle: "",
-                id: 0,
+                id: -1,
                 ndc: "",
                 name: "",
                 packSize: 0,
@@ -126,7 +126,7 @@
             },
             addClick() {
                 this.modalTitle = "Add Drug";
-                this.id = 0;
+                this.id = -1;
                 this.ndc = "";
                 this.name = "";
                 this.packSize = 0;
@@ -152,8 +152,8 @@
                     Unit: this.unit.id,
                     Price: this.price
                 })
-                    .then(() => {
-                        this.refreshData();
+                    .then((response) => {
+                        this.drugs.push(response.data);
                     })
                     .catch(function (error) {
                         alert(error);
