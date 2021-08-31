@@ -152,13 +152,15 @@
                     Unit: this.unit.id,
                     Price: this.price
                 })
-                    .then((response) => {
+                    .then(() => {
                         this.refreshData();
-                        alert(response.data);
+                    })
+                    .catch(function (error) {
+                        alert(error);
                     });
             },
             updateClick() {
-                axios.put("api/Drugs", {
+                axios.put("api/Drugs/" + this.id, {
                     Id: this.id,
                     Ndc: this.ndc,
                     Name: this.name,
@@ -166,9 +168,16 @@
                     Unit: this.unit.id,
                     Price: this.price
                 })
-                    .then((response) => {
-                        this.refreshData();
-                        alert(response.data);
+                    .then(() => {
+                        let index = this.drugs.findIndex(r => r.Id == this.id);
+                        this.drugs[index].Ndc = this.ndc;
+                        this.drugs[index].Name = this.name;
+                        this.drugs[index].PackSize = this.packSize;
+                        this.drugs[index].Unit = this.unit.id;
+                        this.drugs[index].Price = this.price;
+                    })
+                    .catch(function (error) {
+                        alert(error);
                     });
             },
             deleteClick(id) {
@@ -176,9 +185,12 @@
                     return;
                 }
                 axios.delete("api/Drugs/" + id)
-                    .then((response) => {
-                        this.refreshData();
-                        alert(response.data);
+                    .then(() => {
+                        let index = this.drugs.findIndex(r => r.Id == id);
+                        this.drugs.splice(index, 1);
+                    })
+                    .catch(function (error) {
+                        alert(error);
                     });
             }
         },

@@ -6,6 +6,8 @@ using Microsoft.Extensions.Hosting;
 using VueCliMiddleware;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
+using DrugsManager.Data;
 
 namespace DrugsManager
 {
@@ -34,6 +36,9 @@ namespace DrugsManager
             {
                 configuration.RootPath = "DrugsManager";
             });
+
+            services.AddDbContext<DrugsManagerContext>(options =>
+                    options.UseSqlServer(Configuration.GetConnectionString("DrugsManagerContext")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

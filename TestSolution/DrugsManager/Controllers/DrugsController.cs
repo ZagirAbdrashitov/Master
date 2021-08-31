@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using DrugsManager.Data;
 using DrugsManager.Models;
-using System.Data;
-using System.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
 
 namespace DrugsManager.Controllers
 {
@@ -10,104 +12,79 @@ namespace DrugsManager.Controllers
     [Route("api/[controller]")]
     public class DrugsController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
+        private readonly DrugsManagerContext _context;
 
-        public DrugsController(IConfiguration configuration)
+        public DrugsController(DrugsManagerContext context)
         {
-            _configuration = configuration;
+            _context = context;
         }
 
+        // GET: api/Drugs
         [HttpGet]
-        public JsonResult Get()
+        public async Task<ActionResult<IEnumerable<Drug>>> GetDrug()
         {
-            var query = @"select * from dbo.Drug";
-            var table = new DataTable();
-            SqlDataReader sqlReader;
-            var connectionString = _configuration.GetConnectionString("DrugsManagerCon");
-            using (var sqlConnection = new SqlConnection(connectionString))
-            {
-                sqlConnection.Open();
-                using (var sqlCommand = new SqlCommand(query, sqlConnection))
-                {
-                    sqlReader = sqlCommand.ExecuteReader();
-                    table.Load(sqlReader);
-                    sqlReader.Close();
-                    sqlConnection.Close();
-                }
-            }
-            return new JsonResult(table);
+            return await _context.Drug.ToListAsync();
         }
 
+        // PUT: api/Drugs/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutDrug(int id, Drug drug)
+        {
+            if (id != drug.Id)
+            {
+                return BadRequest();
+            }
+
+            _context.Entry(drug).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!DrugExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        // POST: api/Drugs
         [HttpPost]
-        public JsonResult Post(Drug drug)
+        public async Task<ActionResult<Drug>> PostDrug(Drug drug)
         {
-            var query = @"insert into dbo.Drug (Ndc, Name, PackSize, Unit, Price) values (@Ndc, @Name, @PackSize, @Unit, @Price)";
-            var table = new DataTable();
-            SqlDataReader sqlReader;
-            using (var sqlConnection = new SqlConnection(_configuration.GetConnectionString("DrugsManagerCon")))
-            {
-                sqlConnection.Open();
-                using (var sqlCommand = new SqlCommand(query, sqlConnection))
-                {
-                    sqlCommand.Parameters.AddWithValue("@Ndc", drug.Ndc);
-                    sqlCommand.Parameters.AddWithValue("@Name", drug.Name);
-                    sqlCommand.Parameters.AddWithValue("@PackSize", drug.PackSize);
-                    sqlCommand.Parameters.AddWithValue("@Unit", (int)drug.Unit);
-                    sqlCommand.Parameters.AddWithValue("@Price", drug.Price);
-                    sqlReader = sqlCommand.ExecuteReader();
-                    table.Load(sqlReader);
-                    sqlReader.Close();
-                    sqlConnection.Close();
-                }
-            }
-            return new JsonResult("Added Successfully");
+            _context.Drug.Add(drug);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetDrug", new { id = drug.Id }, drug);
         }
 
-        [HttpPut]
-        public JsonResult Put(Drug drug)
-        {
-            var query = @"update dbo.Drug set Ndc=@Ndc, Name=@Name, PackSize=@PackSize, Unit=@Unit, Price=@Price where Id=@Id";
-            var table = new DataTable();
-            SqlDataReader sqlReader;
-            using (var sqlConnection = new SqlConnection(_configuration.GetConnectionString("DrugsManagerCon")))
-            {
-                sqlConnection.Open();
-                using (var sqlCommand = new SqlCommand(query, sqlConnection))
-                {
-                    sqlCommand.Parameters.AddWithValue("@Id", drug.Id);
-                    sqlCommand.Parameters.AddWithValue("@Ndc", drug.Ndc);
-                    sqlCommand.Parameters.AddWithValue("@Name", drug.Name);
-                    sqlCommand.Parameters.AddWithValue("@PackSize", drug.PackSize);
-                    sqlCommand.Parameters.AddWithValue("@Unit", (int)drug.Unit);
-                    sqlCommand.Parameters.AddWithValue("@Price", drug.Price);
-                    sqlReader = sqlCommand.ExecuteReader();
-                    table.Load(sqlReader);
-                    sqlReader.Close();
-                    sqlConnection.Close();
-                }
-            }
-            return new JsonResult("Updated Successfully");
-        }
-
+        // DELETE: api/Drugs/5
         [HttpDelete("{id}")]
-        public JsonResult Delete(int id)
+        public async Task<ActionResult<Drug>> DeleteDrug(int id)
         {
-            var query = @"delete from dbo.Drug where Id=@Id";
-            var table = new DataTable();
-            SqlDataReader sqlReader;
-            using (var sqlConnection = new SqlConnection(_configuration.GetConnectionString("DrugsManagerCon")))
+            var drug = await _context.Drug.FindAsync(id);
+            if (drug == null)
             {
-                sqlConnection.Open();
-                using (var sqlCommand = new SqlCommand(query, sqlConnection))
-                {
-                    sqlCommand.Parameters.AddWithValue("@Id", id);
-                    sqlReader = sqlCommand.ExecuteReader();
-                    table.Load(sqlReader);
-                    sqlReader.Close();
-                    sqlConnection.Close();
-                }
+                return NotFound();
             }
-            return new JsonResult("Deleted Successfully");
+
+            _context.Drug.Remove(drug);
+            await _context.SaveChangesAsync();
+
+            return drug;
+        }
+
+        private bool DrugExists(int id)
+        {
+            return _context.Drug.Any(e => e.Id == id);
         }
     }
 }
