@@ -84,10 +84,10 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" @click="createClick()" v-if="id==0" class="btn btn-primary" data-dismiss="modal">
+                    <button type="button" @click="createClick()" v-if="packSize==0" class="btn btn-primary" data-dismiss="modal">
                         Create
                     </button>
-                    <button type="button" @click="updateClick()" v-if="id!=0" class="btn btn-primary" data-dismiss="modal">
+                    <button type="button" @click="updateClick()" v-if="packSize!=0" class="btn btn-primary" data-dismiss="modal">
                         Update
                     </button>
                 </div>
