@@ -8,8 +8,9 @@
 # ReSharper cache/options directory
 _ReSharper.Caches/
 
-*/bin/
-*/obj/
+bin
+obj
+packages
 node_modules/
 dist/
 
