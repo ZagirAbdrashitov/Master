@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using DrugsManager.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace DrugsManager.Data
 {
@@ -9,6 +10,13 @@ namespace DrugsManager.Data
         {
         }
 
-        public DbSet<Models.Drug> Drug { get; set; }
+        public DbSet<Drug> Drug { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Drug>()
+                .HasIndex(b => b.Ndc)
+                .IsUnique();
+        }
     }
 }
