@@ -12,8 +12,8 @@ namespace DrugsManager.Migrations
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Ndc = table.Column<string>(nullable: true),
-                    Name = table.Column<string>(nullable: true),
+                    Ndc = table.Column<string>(maxLength: 8, nullable: false),
+                    Name = table.Column<string>(maxLength: 255, nullable: false),
                     PackSize = table.Column<int>(nullable: false),
                     Unit = table.Column<int>(nullable: false),
                     Price = table.Column<decimal>(nullable: false)
@@ -22,6 +22,12 @@ namespace DrugsManager.Migrations
                 {
                     table.PrimaryKey("PK_Drug", x => x.Id);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Drug_Ndc",
+                table: "Drug",
+                column: "Ndc",
+                unique: true);
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
