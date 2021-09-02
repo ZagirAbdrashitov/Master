@@ -26,15 +26,10 @@ namespace DrugsManager.Controllers
             return await _context.Drug.ToListAsync();
         }
 
-        // PUT: api/Drugs/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutDrug(int id, Drug drug)
+        // PUT: api/Drugs
+        [HttpPut]
+        public async Task<IActionResult> PutDrug(Drug drug)
         {
-            if (id != drug.Id)
-            {
-                return BadRequest();
-            }
-
             _context.Entry(drug).State = EntityState.Modified;
 
             try
@@ -43,7 +38,7 @@ namespace DrugsManager.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!DrugExists(id))
+                if (!DrugExists(drug.Id))
                 {
                     return NotFound();
                 }

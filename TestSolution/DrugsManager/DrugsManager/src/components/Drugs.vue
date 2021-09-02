@@ -160,7 +160,7 @@
                     });
             },
             updateClick() {
-                axios.put("api/Drugs/" + this.id, {
+                axios.put("api/Drugs", {
                     Id: this.id,
                     Ndc: this.ndc,
                     Name: this.name,
