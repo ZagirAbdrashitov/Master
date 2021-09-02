@@ -84,10 +84,10 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" @click="createClick()" v-if="id==-1" class="btn btn-primary" data-dismiss="modal">
+                    <button type="button" @click="createClick()" v-if="!id" class="btn btn-primary" data-dismiss="modal">
                         Create
                     </button>
-                    <button type="button" @click="updateClick()" v-if="id!=-1" class="btn btn-primary" data-dismiss="modal">
+                    <button type="button" @click="updateClick()" v-if="id" class="btn btn-primary" data-dismiss="modal">
                         Update
                     </button>
                 </div>
@@ -106,7 +106,7 @@
                 units: ['Small Pack', 'Medium Pack', 'Large Pack'],
                 drugs: [],
                 modalTitle: "",
-                id: -1,
+                id: null,
                 ndc: "",
                 name: "",
                 packSize: 0,
@@ -126,7 +126,7 @@
             },
             addClick() {
                 this.modalTitle = "Add Drug";
-                this.id = -1;
+                this.id = null;
                 this.ndc = "";
                 this.name = "";
                 this.packSize = 0;
