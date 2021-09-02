@@ -58,7 +58,7 @@ namespace DrugsManager.Controllers
             _context.Drug.Add(drug);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetDrug", new { id = drug.Id }, drug);
+            return CreatedAtAction("GetDrug", new { id = drug.Id });
         }
 
         // DELETE: api/Drugs/5

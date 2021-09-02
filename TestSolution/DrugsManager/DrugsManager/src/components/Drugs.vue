@@ -153,7 +153,14 @@
                     Price: this.price
                 })
                     .then((response) => {
-                        this.drugs.push(response.data);
+                        this.drugs.push({
+                            Id: response.data,
+                            Ndc: this.ndc,
+                            Name: this.name,
+                            Unit: this.unit.id,
+                            PackSize: this.packSize,
+                            Price: this.price
+                        });
                     })
                     .catch(function (error) {
                         alert(error);
