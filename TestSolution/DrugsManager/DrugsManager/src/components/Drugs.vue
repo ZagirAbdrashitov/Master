@@ -126,9 +126,14 @@
     const twoDecimalPlaces = (value) => value != null && /^[-]?\d*(\.\d+)?$/.test(value) && value.indexOf(".") > -1 && (value.split('.')[1].length == 2);
     const isUnique = (value, vm) =>
     {
-        console.log(value)
         if (value === '') return true;
-        if (vm.form.drugs) return !vm.form.drugs.find(item => item.Ndc == value);
+
+        let cloneDrugs = vm.form.drugs.slice();
+        if (vm.form.currentNdc) {
+            let index = cloneDrugs.findIndex(item => item.Ndc == vm.form.currentNdc);
+            cloneDrugs.splice(index, 1);
+        }
+        if (cloneDrugs) return !cloneDrugs.find(item => item.Ndc == value);
         return true;
     }
 
@@ -143,6 +148,7 @@
                     modalTitle: "",
                     id: null,
                     ndc: "",
+                    currentNdc: null,
                     name: "",
                     packSize: 0,
                     unit: { id: 0, text: '' },
@@ -173,8 +179,8 @@
                 price: {
                     required,
                     minValue: minValue(0.01),
-                    maxValue: maxValue(99999999999999999.99),
-                    twoDecimalPlaces: helpers.withMessage('Value must be number with two decimals', twoDecimalPlaces)
+                    maxValue: maxValue(9999999999.99),
+                    twoDecimalPlaces: helpers.withMessage('Value must be non-negative number with two decimals', twoDecimalPlaces)
                 }
             }
         },
@@ -193,6 +199,7 @@
             },
             addClick() {
                 this.form.modalTitle = "Add Drug";
+                this.form.currentNdc = null;
                 this.form.id = null;
                 this.form.ndc = "";
                 this.form.name = "";
@@ -203,13 +210,14 @@
             },
             editClick(drug) {
                 this.form.modalTitle = "Edit Drug";
+                this.form.currentNdc = drug.Ndc;
                 this.form.id = drug.Id;
                 this.form.ndc = drug.Ndc;
                 this.form.name = drug.Name;
                 this.form.packSize = drug.PackSize;
                 this.form.unit.id = drug.Unit;
                 this.form.unit.text = this.form.units[drug.Unit];
-                this.form.price = drug.Price;
+                this.form.price = drug.Price.toString();
             },
             createClick() {
                 axios.post("api/Drugs", {
@@ -234,7 +242,7 @@
                     });
             },
             updateClick() {
-                axios.put("api/Drugs", {
+                axios.put("api/Drugs/" + this.form.currentNdc, {
                     Id: this.form.id,
                     Ndc: this.form.ndc,
                     Name: this.form.name,
@@ -249,6 +257,7 @@
                         this.form.drugs[index].PackSize = this.form.packSize;
                         this.form.drugs[index].Unit = this.form.unit.id;
                         this.form.drugs[index].Price = this.form.price;
+                        this.form.currentNdc = null;
                     })
                     .catch(function (error) {
                         alert(error);

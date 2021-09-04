@@ -27,10 +27,25 @@ namespace DrugsManager.Controllers
         }
 
         // PUT: api/Drugs
-        [HttpPut]
-        public async Task<IActionResult> PutDrug(Drug drug)
+        [HttpPut("{previousNdc}")]
+        public async Task<IActionResult> PutDrug(Drug drug, string previousNdc)
         {
             _context.Entry(drug).State = EntityState.Modified;
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(drug.Price);
+            }
+            if (DrugExists(drug.Id))
+            {
+                if (!previousNdc.Equals(drug.Ndc) && DrugExists(drug.Ndc))
+                {
+                    return BadRequest("Drug with this NDC already exists");
+                }
+            }
+            else
+            {
+                return NotFound();
+            }
 
             try
             {
@@ -47,6 +62,10 @@ namespace DrugsManager.Controllers
                     throw;
                 }
             }
+            catch (DbUpdateException ex)
+            {
+                return BadRequest(ex.Message);
+            }
 
             return NoContent();
         }
@@ -55,8 +74,25 @@ namespace DrugsManager.Controllers
         [HttpPost]
         public async Task<ActionResult<Drug>> PostDrug(Drug drug)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            if (DrugExists(drug.Ndc))
+            {
+                return BadRequest("Drug with this NDC already exists");
+            }
+
             _context.Drug.Add(drug);
-            await _context.SaveChangesAsync();
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                return BadRequest(ex.Message);
+            }
 
             return CreatedAtAction("GetDrug", drug.Id);
         }
@@ -72,7 +108,15 @@ namespace DrugsManager.Controllers
             }
 
             _context.Drug.Remove(drug);
-            await _context.SaveChangesAsync();
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                return BadRequest(ex.Message);
+            }
 
             return drug;
         }
@@ -80,6 +124,11 @@ namespace DrugsManager.Controllers
         private bool DrugExists(int id)
         {
             return _context.Drug.Any(e => e.Id == id);
+        }
+
+        private bool DrugExists(string ndc)
+        {
+            return _context.Drug.Any(e => e.Ndc == ndc);
         }
     }
 }
