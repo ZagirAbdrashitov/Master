@@ -1,13 +1,13 @@
 <template>
     <h1 id="tableLabel">List of drugs</h1>
 
-    <p v-if="!drugs"><em>Loading...</em></p>
+    <p v-if="!form.drugs"><em>Loading...</em></p>
 
     <button type="button" class="btn btn-primary m-2 fload-end" @click="addClick()" data-toggle="modal" data-target="#drugModal">
         Add Drug
     </button>
 
-    <table class='table table-striped' aria-labelledby="tableLabel" v-if="drugs">
+    <table class='table table-striped' aria-labelledby="tableLabel" v-if="form.drugs">
         <thead>
             <tr>
                 <th>NDC</th>
@@ -19,11 +19,11 @@
             </tr>
         </thead>
         <tbody>
-            <tr v-for="drug of drugs" v-bind:key="drug">
+            <tr v-for="drug of form.drugs" v-bind:key="drug">
                 <td>{{ drug.Ndc }}</td>
                 <td>{{ drug.Name }}</td>
                 <td>{{ drug.PackSize }}</td>
-                <td>{{ units[drug.Unit] }}</td>
+                <td>{{ form.units[drug.Unit] }}</td>
                 <td>{{ drug.Price }}</td>
                 <td>
                     <button type="button" class="btn btn-light mr-1" @click="editClick(drug)" data-toggle="modal" data-target="#drugModal">
@@ -47,7 +47,7 @@
             <div class="modal-dialog modal-lg modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="drugModalLabel">{{ modalTitle }}</h5>
+                        <h5 class="modal-title" id="drugModalLabel">{{ form.modalTitle }}</h5>
                         <button type="button" class="btn btn-light mr-1" data-dismiss="modal" aria-label="Close">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-square-fill" viewBox="0 0 16 16">
                                 <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2zm3.354 4.646L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 1 1 .708-.708z" />
@@ -56,66 +56,59 @@
                     </div>
                     <div class="modal-body">
                         <div class="d-flex flex-row bd-highlight mb-3">
-                            <div class="p-2 w-50 bd-highlight">
+                            <div class="p-2 w-100 bd-highlight">
+                                <div class="error" style="color:red" v-if="v$.form.ndc.$error">
+                                    <template v-for="error of v$.form.ndc.$errors" :key="error.$uid">
+                                        {{ error.$message }} <br>
+                                    </template>
+                                </div>
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">NDC</span>
-                                    <input type="text" class="form-control" v-model="$v.ndc.$model" @blur="$v.ndc.$touch()">
-                                    <div class="error" v-if="$v.ndc.$error">
-                                        <template v-if="!$v.ndc.validFormat">
-                                            National drug code must contain only letters or digits 8 characters length
-                                        </template>
-                                        <template v-else-if="!$v.ndc.isUnique">
-                                            Drug with this NDC already exists
-                                        </template>
-                                        <template v-else>
-                                            Field is required
-                                        </template>
-                                    </div>
+                                    <input type="text" class="form-control" v-model="form.ndc" @blur="v$.form.ndc.$touch()">
+                                </div>
+                                <div class="error" style="color:red" v-if="v$.form.name.$error">
+                                    <template v-for="error of v$.form.name.$errors" :key="error.$uid">
+                                        {{ error.$message }} <br>
+                                    </template>
                                 </div>
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Name</span>
-                                    <input type="text" class="form-control" v-model="$v.name.$model" @blur="$v.name.$touch()">
-                                    <div class="error" v-if="$v.name.$error">
-                                        <template v-if="!$v.name.maxLength">
-                                            Name is too long
-                                        </template>
-                                        <template v-else>
-                                            Field is required
-                                        </template>
-                                    </div>
+                                    <input type="text" class="form-control" v-model="form.name" @blur="v$.form.name.$touch()">
+                                </div>
+                                <div class="error" style="color:red" v-if="v$.form.packSize.$error">
+                                    <template v-for="error of v$.form.packSize.$errors" :key="error.$uid">
+                                        {{ error.$message }} <br>
+                                    </template>
                                 </div>
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Pack size</span>
-                                    <input type="text" class="form-control" v-model="$v.packSize.$model" @blur="$v.packSize.$touch()">
-                                    <div class="error" v-if="$v.packSize.$error">
-                                        <template v-if="!$v.packSize.numeric">
-                                            Numeric format required
-                                        </template>
-                                        <template v-else>
-                                            Field is required
-                                        </template>
-                                    </div>
+                                    <input type="text" class="form-control" v-model="form.packSize" @blur="v$.form.packSize.$touch()">
                                 </div>
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Unit</span>
-                                    <select class="form-select" name="unitSelect" v-model="unit">
-                                        <option v-for="(item, index) in units" :key="index" :value="{ id: index, text: item }">
+                                    <select class="form-select" name="unitSelect" v-model="form.unit">
+                                        <option v-for="(item, index) in form.units" :key="index" :value="{ id: index, text: item }">
                                             {{ item }}
                                         </option>
                                     </select>
                                 </div>
+                                <div class="error" style="color:red" v-if="v$.form.price.$error">
+                                    <template v-for="error of v$.form.price.$errors" :key="error.$uid">
+                                        {{ error.$message }} <br>
+                                    </template>
+                                </div>
                                 <div class="input-group mb-3">
-                                    <span class="input-group-text">Price</span>
-                                    <input type="text" class="form-control" v-model="price">
+                                    <span class="input-group-text">Price ($)</span>
+                                    <input type="text" class="form-control" v-model="form.price" @blur="v$.form.price.$touch()">
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" @click="createClick()" v-if="!id" class="btn btn-primary" data-dismiss="modal" :disabled="$v.validationGroup.$invalid">
+                        <button type="submit" @click="createClick()" v-if="!form.id" class="btn btn-primary" data-dismiss="modal" :disabled="v$.form.$invalid">
                             Create
                         </button>
-                        <button type="submit" @click="updateClick()" v-if="id" class="btn btn-primary" data-dismiss="modal" :disabled="$v.validationGroup.$invalid">
+                        <button type="submit" @click="updateClick()" v-if="form.id" class="btn btn-primary" data-dismiss="modal" :disabled="v$.form.$invalid">
                             Update
                         </button>
                     </div>
@@ -127,97 +120,110 @@
 
 <script>
     import axios from "axios";
-    import { validationMixin } from "vuelidate";
-    import { required, maxLength, numeric } from "@vuelidate/validators";
+    import useVuelidate from '@vuelidate/core';
+    import { helpers, required, minValue, maxValue, maxLength, minLength, alphaNum, integer } from '@vuelidate/validators';
+
+    const twoDecimalPlaces = (value) => value != null && /^[-]?\d*(\.\d+)?$/.test(value) && value.indexOf(".") > -1 && (value.split('.')[1].length == 2);
 
     export default {
         name: "Drugs",
-        mixins: [validationMixin],
+        setup: () => ({ v$: useVuelidate() }),
         data() {
             return {
-                units: ['Small Pack', 'Medium Pack', 'Large Pack'],
-                drugs: [],
-                modalTitle: "",
-                id: null,
-                ndc: "",
-                name: "",
-                packSize: 0,
-                unit: { id: 0, text: '' },
-                price: 0
+                form: {
+                    units: ['Small Pack', 'Medium Pack', 'Large Pack'],
+                    drugs: [],
+                    modalTitle: "",
+                    id: null,
+                    ndc: "",
+                    name: "",
+                    packSize: 0,
+                    unit: { id: 0, text: '' },
+                    price: 0
+                }
             }
         },
-        validations() {
-            return {
+        validations: {
+            form: {
                 ndc: {
                     required,
-                    validFormat: val => /^\w{8}$/.test(val),
-                    isUnique: this.isNdcUnique
+                    alphaNum,
+                    minLength: minLength(8),
+                    maxLength: maxLength(8),
+                    isUnique(value) {
+                        if (value === '') return true;
+                        if (this.form.drugs) return !this.form.drugs.find(item => item.Ndc == value);
+                        return true;
+                    }
                 },
                 name: {
                     required,
-                    maxLength: maxLength(500)
+                    minLength: minLength(3),
+                    maxLength: maxLength(255)
                 },
                 packSize: {
                     required,
-                    numeric
+                    integer,
+                    minValue: minValue(1),
+                    maxValue: maxValue(2147483647)
                 },
-                validationGroup: ['ndc', 'name', 'packSize']
+                price: {
+                    required,
+                    minValue: minValue(0.01),
+                    maxValue: maxValue(99999999999999999.99),
+                    twoDecimalPlaces: helpers.withMessage('Value must be number with two decimals', twoDecimalPlaces)
+                }
             }
         },
         methods: {
             submitAction() {
                 alert('Form submitted');
             },
-            isNdcUnique = (value, vm) => {
-                if (value === '') return true;
-                if (vm.drugs) return !vm.drugs.find(item => item.Ndc == value);
-                return true;
-            },
             refreshData() {
                 axios.get("api/Drugs")
                     .then((response) => {
-                        this.drugs = response.data;
+                        this.form.drugs = response.data;
                     })
                     .catch(function (error) {
                         alert(error);
                     });
             },
             addClick() {
-                this.modalTitle = "Add Drug";
-                this.id = null;
-                this.ndc = "";
-                this.name = "";
-                this.packSize = 0;
-                this.unit.id = 0;
-                this.unit.text = this.units[0];
-                this.price = 0;
+                this.form.modalTitle = "Add Drug";
+                this.form.id = null;
+                this.form.ndc = "";
+                this.form.name = "";
+                this.form.packSize = 0;
+                this.form.unit.id = 0;
+                this.form.unit.text = this.form.units[0];
+                this.form.price = 0;
             },
             editClick(drug) {
-                this.modalTitle = "Edit Drug";
-                this.id = drug.Id;
-                this.ndc = drug.Ndc;
-                this.name = drug.Name;
-                this.packSize = drug.PackSize;
-                this.unit.id = drug.Unit;
-                this.unit.text = this.units[drug.Unit];
-                this.price = drug.Price;
+                this.form.modalTitle = "Edit Drug";
+                this.form.id = drug.Id;
+                this.form.ndc = drug.Ndc;
+                this.form.name = drug.Name;
+                this.form.packSize = drug.PackSize;
+                this.form.unit.id = drug.Unit;
+                this.form.unit.text = this.form.units[drug.Unit];
+                this.form.price = drug.Price;
             },
             createClick() {
                 axios.post("api/Drugs", {
-                    Ndc: this.ndc,
-                    Name: this.name,
-                    PackSize: this.packSize,
-                    Unit: this.unit.id,
-                    Price: this.price
+                    Ndc: this.form.ndc,
+                    Name: this.form.name,
+                    PackSize: this.form.packSize,
+                    Unit: this.form.unit.id,
+                    Price: this.form.price
                 })
                     .then((response) => {
-                        this.drugs.push({
+                        this.form.drugs.push({
                             Id: response.data,
-                            Ndc: this.ndc,
-                            Name: this.name,
-                            Unit: this.unit.id,
-                            PackSize: this.packSize,
-                            Price: this.price
+                            Ndc: this.form.ndc,
+                            Name: this.form.name,
+                            Unit: this.form.unit.id,
+                            PackSize: this.form.packSize,
+                            Price: this.form.price
                         });
                     })
                     .catch(function (error) {
@@ -226,20 +232,20 @@
             },
             updateClick() {
                 axios.put("api/Drugs", {
-                    Id: this.id,
-                    Ndc: this.ndc,
-                    Name: this.name,
-                    PackSize: this.packSize,
-                    Unit: this.unit.id,
-                    Price: this.price
+                    Id: this.form.id,
+                    Ndc: this.form.ndc,
+                    Name: this.form.name,
+                    PackSize: this.form.packSize,
+                    Unit: this.form.unit.id,
+                    Price: this.form.price
                 })
                     .then(() => {
-                        let index = this.drugs.findIndex(r => r.Id == this.id);
-                        this.drugs[index].Ndc = this.ndc;
-                        this.drugs[index].Name = this.name;
-                        this.drugs[index].PackSize = this.packSize;
-                        this.drugs[index].Unit = this.unit.id;
-                        this.drugs[index].Price = this.price;
+                        let index = this.form.drugs.findIndex(r => r.Id == this.form.id);
+                        this.form.drugs[index].Ndc = this.form.ndc;
+                        this.form.drugs[index].Name = this.form.name;
+                        this.form.drugs[index].PackSize = this.form.packSize;
+                        this.form.drugs[index].Unit = this.form.unit.id;
+                        this.form.drugs[index].Price = this.form.price;
                     })
                     .catch(function (error) {
                         alert(error);
@@ -251,8 +257,8 @@
                 }
                 axios.delete("api/Drugs/" + id)
                     .then(() => {
-                        let index = this.drugs.findIndex(r => r.Id == id);
-                        this.drugs.splice(index, 1);
+                        let index = this.form.drugs.findIndex(r => r.Id == id);
+                        this.form.drugs.splice(index, 1);
                     })
                     .catch(function (error) {
                         alert(error);
