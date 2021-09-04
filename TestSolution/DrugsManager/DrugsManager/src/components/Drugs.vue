@@ -124,6 +124,13 @@
     import { helpers, required, minValue, maxValue, maxLength, minLength, alphaNum, integer } from '@vuelidate/validators';
 
     const twoDecimalPlaces = (value) => value != null && /^[-]?\d*(\.\d+)?$/.test(value) && value.indexOf(".") > -1 && (value.split('.')[1].length == 2);
+    const isUnique = (value, vm) =>
+    {
+        console.log(value)
+        if (value === '') return true;
+        if (vm.form.drugs) return !vm.form.drugs.find(item => item.Ndc == value);
+        return true;
+    }
 
     export default {
         name: "Drugs",
@@ -150,11 +157,7 @@
                     alphaNum,
                     minLength: minLength(8),
                     maxLength: maxLength(8),
-                    isUnique(value) {
-                        if (value === '') return true;
-                        if (this.form.drugs) return !this.form.drugs.find(item => item.Ndc == value);
-                        return true;
-                    }
+                    isUnique: helpers.withMessage('Drug with this NDC already exists', isUnique)
                 },
                 name: {
                     required,
