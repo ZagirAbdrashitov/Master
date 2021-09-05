@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using DrugsManager.Data;
+using DrugsManager.Models;
 
 namespace DrugsManager
 {
@@ -27,6 +28,8 @@ namespace DrugsManager
             {
                 c.AddPolicy("AllowOrigin", options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
             });
+
+            services.AddScoped<IRepository, DrugRepository>();
 
             services.AddControllersWithViews().AddNewtonsoftJson(options =>
                 options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore).AddNewtonsoftJson(options =>

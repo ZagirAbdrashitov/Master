@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using DrugsManager.Data;
 using DrugsManager.Models;
 
 namespace DrugsManager.Controllers
@@ -12,32 +10,31 @@ namespace DrugsManager.Controllers
     [Route("api/[controller]")]
     public class DrugsController : ControllerBase
     {
-        private readonly DrugsManagerContext _context;
+        private readonly IRepository _repository;
 
-        public DrugsController(DrugsManagerContext context)
+        public DrugsController(IRepository repository)
         {
-            _context = context;
+            _repository = repository;
         }
 
         // GET: api/Drugs
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Drug>>> GetDrug()
         {
-            return await _context.Drug.ToListAsync();
+            return await _repository.GetAllDrugs();
         }
 
         // PUT: api/Drugs
         [HttpPut("{previousNdc}")]
         public async Task<IActionResult> PutDrug(Drug drug, string previousNdc)
         {
-            _context.Entry(drug).State = EntityState.Modified;
             if (!ModelState.IsValid)
             {
-                return BadRequest(drug.Price);
+                return BadRequest(ModelState);
             }
-            if (DrugExists(drug.Id))
+            if (_repository.IsDrugExists(drug.Id))
             {
-                if (!previousNdc.Equals(drug.Ndc) && DrugExists(drug.Ndc))
+                if (!previousNdc.Equals(drug.Ndc) && _repository.IsDrugExists(drug.Ndc))
                 {
                     return BadRequest("Drug with this NDC already exists");
                 }
@@ -49,11 +46,11 @@ namespace DrugsManager.Controllers
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _repository.UpdateDrug(drug);
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!DrugExists(drug.Id))
+                if (!_repository.IsDrugExists(drug.Id))
                 {
                     return NotFound();
                 }
@@ -67,7 +64,7 @@ namespace DrugsManager.Controllers
                 return BadRequest(ex.Message);
             }
 
-            return NoContent();
+            return Ok();
         }
 
         // POST: api/Drugs
@@ -78,57 +75,47 @@ namespace DrugsManager.Controllers
             {
                 return BadRequest(ModelState);
             }
-            if (DrugExists(drug.Ndc))
+            if (_repository.IsDrugExists(drug.Ndc))
             {
                 return BadRequest("Drug with this NDC already exists");
             }
 
-            _context.Drug.Add(drug);
-
             try
             {
-                await _context.SaveChangesAsync();
+                var result = await _repository.CreateDrug(drug);
+
+                return CreatedAtAction("GetDrug", result);
             }
             catch (DbUpdateException ex)
             {
                 return BadRequest(ex.Message);
             }
-
-            return CreatedAtAction("GetDrug", drug.Id);
         }
 
         // DELETE: api/Drugs/5
         [HttpDelete("{id}")]
         public async Task<ActionResult<Drug>> DeleteDrug(int id)
         {
-            var drug = await _context.Drug.FindAsync(id);
-            if (drug == null)
+            if (!_repository.IsDrugExists(id))
             {
                 return NotFound();
             }
 
-            _context.Drug.Remove(drug);
-
             try
             {
-                await _context.SaveChangesAsync();
+                await _repository.DeleteDrug(id);
             }
             catch (DbUpdateException ex)
             {
                 return BadRequest(ex.Message);
             }
 
-            return drug;
-        }
+            if (!_repository.IsDrugExists(id))
+            {
+                return Ok();
+            }
 
-        private bool DrugExists(int id)
-        {
-            return _context.Drug.Any(e => e.Id == id);
-        }
-
-        private bool DrugExists(string ndc)
-        {
-            return _context.Drug.Any(e => e.Ndc == ndc);
+            return Problem(title: "Drug is not deleted", detail: $"Drug ID: {id}");
         }
     }
 }
