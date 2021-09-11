@@ -3,11 +3,8 @@ using DrugsManager.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DrugsManager.Tests
 {
@@ -22,13 +19,9 @@ namespace DrugsManager.Tests
             new Drug { Id=333, Ndc="33333333", Name="Third Drug", PackSize=3, Unit=Unit.LargePack, Price=3.33m},
         };
 
-        public DrugsRepositoryTests(ITestOutputHelper output)
+        public DrugsRepositoryTests()
         {
-            var type = output.GetType();
-            var testMember = type.GetField("test", BindingFlags.Instance | BindingFlags.NonPublic);
-            var test = (ITest)testMember.GetValue(output);
-
-            _testContext = GetTestDatabase(test.DisplayName);
+            _testContext = GetTestDatabase(Guid.NewGuid().ToString());
             _testRepository = new DrugRepository(_testContext);
         }
 
@@ -38,67 +31,86 @@ namespace DrugsManager.Tests
         }
 
         [Fact]
-        public async Task RepositoryReturnsListOfDrugs()
+        public async Task GetAllDrugs_ReturnsCorrectListOfDrugs()
         {
-            // Act
             var getResult = await _testRepository.GetAllDrugs();
 
-            // Assert
-            Assert.IsAssignableFrom<IEnumerable<Drug>>(getResult);
-            Assert.Equal(_testContext.Drug.Count(), getResult.Count());
-
-            foreach (var drug in getResult)
-            {
-                Assert.Contains(drug, _testContext.Drug);
-            }
+            Assert.Equal(_testContext.Drug, getResult);
         }
 
         [Fact]
-        public async Task RepositoryCreatesDrug()
+        public async Task CreateDrug_DrugCreatedSuccessfully()
         {
-            // Arrange
             var testDrug = new Drug { Ndc = "1234asdf", Name = "Test Drug", PackSize = 2, Unit = Unit.MediumPack, Price = 1.23m };
 
-            //act
-            var newId = await _testRepository.CreateDrug(testDrug);
+            await _testRepository.CreateDrug(testDrug);
 
-            //assert
             Assert.Contains(testDrug, _testContext.Drug);
-            Assert.True(_testRepository.IsDrugExists(newId));
-            Assert.True(_testRepository.IsDrugExists(testDrug.Ndc));
         }
 
         [Fact]
-        public async Task RepositoryUpdatesDrug()
+        public async Task CreateDrug_IdAlreadyExists()
         {
-            // Arrange
+            _testContext.Entry(DefaultDrugsList[0]).State = EntityState.Detached;
+            var testDrug = new Drug { Id = 111, Ndc = "1234asdf", Name = "Test Drug", PackSize = 2, Unit = Unit.MediumPack, Price = 1.23m };
+
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() => _testRepository.CreateDrug(testDrug));
+            Assert.Equal("An item with the same key has already been added. Key: 111", exception.Message);
+        }
+
+        [Fact]
+        public async Task UpdateDrug_DrugUpdatedSuccessfully()
+        {
             var updatedDrug = new Drug { Id = DefaultDrugsList[0].Id, Ndc = "1234asdf", Name = "Test Drug", PackSize = 2, Unit = Unit.MediumPack, Price = 1.23m };
             _testContext.Entry(DefaultDrugsList[0]).State = EntityState.Detached;
 
-            //act
             await _testRepository.UpdateDrug(updatedDrug);
 
-            //assert
             Assert.DoesNotContain(DefaultDrugsList[0], _testContext.Drug);
             Assert.Contains(updatedDrug, _testContext.Drug);
         }
 
         [Fact]
-        public async Task RepositoryDeletesDrug()
+        public async Task UpdateDrug_DrugNotExists()
         {
-            //act
+            var updatedDrug = new Drug { Id = 123, Ndc = "1234asdf", Name = "Test Drug", PackSize = 2, Unit = Unit.MediumPack, Price = 1.23m };
+
+            var exception = await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => _testRepository.UpdateDrug(updatedDrug));
+            Assert.Equal("Attempted to update or delete an entity that does not exist in the store.", exception.Message);
+        }
+
+        [Fact]
+        public async Task DeleteDrug_DrugDeletedSuccessfully()
+        {
             await _testRepository.DeleteDrug(DefaultDrugsList[1].Id);
 
-            //assert
             Assert.DoesNotContain(DefaultDrugsList[1], _testContext.Drug);
-            Assert.False(_testRepository.IsDrugExists(DefaultDrugsList[1].Id));
-            Assert.False(_testRepository.IsDrugExists(DefaultDrugsList[1].Ndc));
+        }
+
+        [Fact]
+        public async Task DeleteDrug_DrugNotExists()
+        {
+            var exception = await Assert.ThrowsAsync<ArgumentNullException>(() => _testRepository.DeleteDrug(123));
+            Assert.Contains("Value cannot be null.", exception.Message);
+        }
+
+        [Fact]
+        public void IsDrugExists_DrugExists()
+        {
+            Assert.True(_testRepository.IsDrugExists(DefaultDrugsList[2].Id));
+            Assert.True(_testRepository.IsDrugExists(DefaultDrugsList[2].Ndc));
+        }
+
+        [Fact]
+        public void IsDrugExists_DrugNotExists()
+        {
+            Assert.False(_testRepository.IsDrugExists(123));
+            Assert.False(_testRepository.IsDrugExists("asdf1234"));
         }
 
         private static DrugsManagerContext GetTestDbContext(string dbName)
         {
             var options = new DbContextOptionsBuilder<DrugsManagerContext>()
-                .EnableSensitiveDataLogging()
                 .UseInMemoryDatabase(databaseName: dbName)
                 .Options;
 
