@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DrugsManager.Models;
+using System;
 
 namespace DrugsManager.Controllers
 {
@@ -59,7 +60,7 @@ namespace DrugsManager.Controllers
                     throw;
                 }
             }
-            catch (DbUpdateException ex)
+            catch (ArgumentException ex)
             {
                 return BadRequest(ex.Message);
             }
@@ -79,6 +80,10 @@ namespace DrugsManager.Controllers
             {
                 return BadRequest("Drug with this NDC already exists");
             }
+            if (_repository.IsDrugExists(drug.Id))
+            {
+                return BadRequest("Drug with this Id already exists");
+            }
 
             try
             {
@@ -86,7 +91,7 @@ namespace DrugsManager.Controllers
 
                 return CreatedAtAction("GetDrug", result);
             }
-            catch (DbUpdateException ex)
+            catch (ArgumentException ex)
             {
                 return BadRequest(ex.Message);
             }
@@ -105,7 +110,7 @@ namespace DrugsManager.Controllers
             {
                 await _repository.DeleteDrug(id);
             }
-            catch (DbUpdateException ex)
+            catch (ArgumentException ex)
             {
                 return BadRequest(ex.Message);
             }
@@ -115,7 +120,7 @@ namespace DrugsManager.Controllers
                 return Ok();
             }
 
-            return Problem(title: "Drug is not deleted", detail: $"Drug ID: {id}");
+            return BadRequest($"Drug with Id [ {id}] is not deleted");
         }
     }
 }
