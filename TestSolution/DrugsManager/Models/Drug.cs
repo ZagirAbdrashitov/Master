@@ -26,8 +26,7 @@ namespace DrugsManager.Models
         public Unit Unit { get; set; }
 
         [Required]
-        [DecimalWithCustomization(1, 10, 2, 2, false,
-            ErrorMessage = "Value must be non-negative number with two decimals")]
+        [DecimalWithCustomization(1, 10, 2, 2, false)]
         public decimal Price { get; set; }
     }
 }

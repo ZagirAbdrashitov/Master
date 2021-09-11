@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
-using System.Text.RegularExpressions;
 
 namespace DrugsManager.Attributes
 {
@@ -24,9 +23,47 @@ namespace DrugsManager.Attributes
 
         public override bool IsValid(object value)
         {
-            var pattern = @$"^{(_allowNegative ? "[-]?" : string.Empty)}\d{{{_minDigitsBeforeDot},{_maxDigitsBeforeDot}}}(\.|\,)\d{{{_minDigitsAfterDot},{_maxDigitsAfterDot}}}$";
+            var result = true;
+            ErrorMessage = "Validation errors:";
+            var beforeDot = GetNumberOfDigitsBeforeDot((decimal)value);
+            var afterDot = GetNumberOfDigitsAfterDot((decimal)value);
+            if (beforeDot < _minDigitsBeforeDot)
+            {
+                ErrorMessage = $"{ErrorMessage} Minimal number of digits before dot is {_minDigitsBeforeDot};";
+                result = false;
+            }
+            if (beforeDot > _maxDigitsBeforeDot)
+            {
+                ErrorMessage = $"{ErrorMessage} Maximal number of digits before dot is {_maxDigitsBeforeDot};";
+                result = false;
+            }
+            if (afterDot < _minDigitsAfterDot)
+            {
+                ErrorMessage = $"{ErrorMessage} Minimal number of digits after dot is {_minDigitsAfterDot};";
+                result = false;
+            }
+            if (afterDot > _maxDigitsAfterDot)
+            {
+                ErrorMessage = $"{ErrorMessage} Maximal number of digits before dot is {_maxDigitsAfterDot};";
+                result = false;
+            }
+            if ((decimal)value < 0 && !_allowNegative)
+            {
+                ErrorMessage = $"{ErrorMessage} Value must be non-negative;";
+                result = false;
+            }
 
-            return Regex.IsMatch(value.ToString(), pattern);
+            return result;
+        }
+
+        private int GetNumberOfDigitsBeforeDot(decimal value)
+        {
+            return Math.Truncate(Math.Abs(value)).ToString().Length;
+        }
+
+        private int GetNumberOfDigitsAfterDot(decimal value)
+        {
+            return BitConverter.GetBytes(decimal.GetBits(value)[3])[2];
         }
     }
 }
