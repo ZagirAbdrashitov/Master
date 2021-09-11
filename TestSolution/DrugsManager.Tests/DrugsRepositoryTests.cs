@@ -55,14 +55,13 @@ namespace DrugsManager.Tests
             var testDrug = new Drug { Id = 111, Ndc = "1234asdf", Name = "Test Drug", PackSize = 2, Unit = Unit.MediumPack, Price = 1.23m };
 
             var exception = await Assert.ThrowsAsync<ArgumentException>(() => _testRepository.CreateDrug(testDrug));
-            Assert.Equal("An item with the same key has already been added. Key: 111", exception.Message);
+            Assert.Equal($"Drug with Id [{testDrug.Id}] already exists.", exception.Message);
         }
 
         [Fact]
         public async Task UpdateDrug_DrugUpdatedSuccessfully()
         {
             var updatedDrug = new Drug { Id = DefaultDrugsList[0].Id, Ndc = "1234asdf", Name = "Test Drug", PackSize = 2, Unit = Unit.MediumPack, Price = 1.23m };
-            _testContext.Entry(DefaultDrugsList[0]).State = EntityState.Detached;
 
             await _testRepository.UpdateDrug(updatedDrug);
 
@@ -75,8 +74,8 @@ namespace DrugsManager.Tests
         {
             var updatedDrug = new Drug { Id = 123, Ndc = "1234asdf", Name = "Test Drug", PackSize = 2, Unit = Unit.MediumPack, Price = 1.23m };
 
-            var exception = await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => _testRepository.UpdateDrug(updatedDrug));
-            Assert.Equal("Attempted to update or delete an entity that does not exist in the store.", exception.Message);
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() => _testRepository.UpdateDrug(updatedDrug));
+            Assert.Equal("Can't update drug: drug not found.", exception.Message);
         }
 
         [Fact]
@@ -90,8 +89,9 @@ namespace DrugsManager.Tests
         [Fact]
         public async Task DeleteDrug_DrugNotExists()
         {
-            var exception = await Assert.ThrowsAsync<ArgumentNullException>(() => _testRepository.DeleteDrug(123));
-            Assert.Contains("Value cannot be null.", exception.Message);
+            var wrongId = 123;
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() => _testRepository.DeleteDrug(wrongId));
+            Assert.Contains($"No drug with Id [{wrongId}].", exception.Message);
         }
 
         [Fact]

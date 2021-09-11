@@ -1,5 +1,6 @@
 ﻿using DrugsManager.Data;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,6 +23,11 @@ namespace DrugsManager.Models
 
         public async Task<int> CreateDrug(Drug drug)
         {
+            if (IsDrugExists(drug.Id))
+            {
+                throw new ArgumentException($"Drug with Id [{drug.Id}] already exists.");
+            }
+
             _context.Drug.Add(drug);
             await _context.SaveChangesAsync();
 
@@ -30,6 +36,13 @@ namespace DrugsManager.Models
 
         public async Task<Drug> UpdateDrug(Drug drug)
         {
+            var foundDrug = await _context.Drug.FindAsync(drug.Id);
+            if (foundDrug is null)
+            {
+                throw new ArgumentException($"Can't update drug: drug not found.");
+            }
+
+            _context.Entry(foundDrug).State = EntityState.Detached;
             _context.Entry(drug).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 
@@ -39,6 +52,11 @@ namespace DrugsManager.Models
         public async Task<Drug> DeleteDrug(int id)
         {
             var drug = await _context.Drug.FindAsync(id);
+
+            if (drug is null)
+            {
+                throw new ArgumentException($"No drug with Id [{id}].");
+            }
 
             _context.Drug.Remove(drug);
             await _context.SaveChangesAsync();
