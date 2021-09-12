@@ -19,14 +19,14 @@ namespace DrugsManager.Models
 
         [Required]
         [Range(1, int.MaxValue)]
-        public int PackSize { get; set; }
+        public int? PackSize { get; set; }
 
         [Required]
         [Range(0, 2)]
-        public Unit Unit { get; set; }
+        public Unit? Unit { get; set; }
 
         [Required]
         [DecimalWithCustomization(1, 10, 2, 2, false)]
-        public decimal Price { get; set; }
+        public decimal? Price { get; set; }
     }
 }
