@@ -42,16 +42,6 @@ namespace DrugsManager.Tests
         }
 
         [Fact]
-        public async Task CreateDrug_IdAlreadyExists()
-        {
-            _testContext.Entry(DefaultDrugsList[0]).State = EntityState.Detached;
-            var testDrug = new Drug { Id = 111, Ndc = "1234asdf", Name = "Test Drug", PackSize = 2, Unit = Unit.MediumPack, Price = 1.23m };
-
-            var exception = await Assert.ThrowsAsync<ArgumentException>(() => _testRepository.CreateDrug(testDrug));
-            Assert.Equal($"Drug with Id [{testDrug.Id}] already exists.", exception.Message);
-        }
-
-        [Fact]
         public async Task UpdateDrug_DrugUpdatedSuccessfully()
         {
             var updatedDrug = new Drug { Id = DefaultDrugsList[0].Id, Ndc = "1234asdf", Name = "Test Drug", PackSize = 2, Unit = Unit.MediumPack, Price = 1.23m };

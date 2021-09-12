@@ -23,11 +23,6 @@ namespace DrugsManager.Models
 
         public async Task<int> CreateDrug(Drug drug)
         {
-            if (IsDrugExists(drug.Id))
-            {
-                throw new ArgumentException($"Drug with Id [{drug.Id}] already exists.");
-            }
-
             _context.Drug.Add(drug);
             await _context.SaveChangesAsync();
 
