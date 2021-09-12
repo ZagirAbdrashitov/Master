@@ -1,4 +1,6 @@
-﻿using DrugsManager.Controllers;
+﻿using AutoMapper;
+using DrugsManager.Controllers;
+using DrugsManager.Mappings;
 using DrugsManager.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,12 +12,23 @@ namespace DrugsManager.Tests
 {
     public class DrugsControllerTests : TestsBase
     {
+        private readonly IMapper _mapper;
+
+        public DrugsControllerTests()
+        {
+            var mapperConfig = new MapperConfiguration(mc =>
+            {
+                mc.AddProfile(new MappingProfile());
+            });
+            _mapper = mapperConfig.CreateMapper();
+        }
+
         [Fact]
         public async Task GetDrug_ReturnsCorrectListOfDrugs()
         {
             var mockRepository = Substitute.For<IRepository>();
             mockRepository.GetAllDrugs().Returns(DefaultDrugsList);
-            var controller = new DrugsController(mockRepository);
+            var controller = new DrugsController(_mapper, mockRepository);
 
             var getResult = await controller.GetDrug();
 
@@ -31,7 +44,7 @@ namespace DrugsManager.Tests
             mockRepository.UpdateDrug(updatedDrug).Returns(updatedDrug);
             mockRepository.IsDrugExists(DefaultDrugsList[0].Id).Returns(true);
             mockRepository.IsDrugExists("11111111").Returns(true);
-            var controller = new DrugsController(mockRepository);
+            var controller = new DrugsController(_mapper, mockRepository);
 
             var putResult = await controller.PutDrug(updatedDrug, "11111111");
 
@@ -47,7 +60,7 @@ namespace DrugsManager.Tests
             mockRepository.UpdateDrug(updatedDrug).Returns(updatedDrug);
             mockRepository.IsDrugExists(DefaultDrugsList[0].Id).Returns(true);
             mockRepository.IsDrugExists("1234asdf").Returns(false);
-            var controller = new DrugsController(mockRepository);
+            var controller = new DrugsController(_mapper, mockRepository);
 
             var putResult = await controller.PutDrug(updatedDrug, "11111111");
 
@@ -62,7 +75,7 @@ namespace DrugsManager.Tests
             var mockRepository = Substitute.For<IRepository>();
             mockRepository.IsDrugExists(DefaultDrugsList[0].Id).Returns(true);
             mockRepository.IsDrugExists("1234asdf").Returns(true);
-            var controller = new DrugsController(mockRepository);
+            var controller = new DrugsController(_mapper, mockRepository);
 
             var putResult = await controller.PutDrug(updatedDrug, "11111111");
             
@@ -77,7 +90,7 @@ namespace DrugsManager.Tests
 
             var mockRepository = Substitute.For<IRepository>();
             mockRepository.IsDrugExists("1234asdf").Returns(false);
-            var controller = new DrugsController(mockRepository);
+            var controller = new DrugsController(_mapper, mockRepository);
 
             var putResult = await controller.PutDrug(updatedDrug, "11111111");
 
@@ -93,7 +106,7 @@ namespace DrugsManager.Tests
             mockRepository.UpdateDrug(updatedDrug).Returns(Task.FromException<Drug>(new DbUpdateConcurrencyException()));
             mockRepository.IsDrugExists(DefaultDrugsList[0].Id).Returns(true, false);
             mockRepository.IsDrugExists("11111111").Returns(true);
-            var controller = new DrugsController(mockRepository);
+            var controller = new DrugsController(_mapper, mockRepository);
 
             var putResult = await controller.PutDrug(updatedDrug, "11111111");
 
@@ -103,29 +116,28 @@ namespace DrugsManager.Tests
         [Fact]
         public async Task PostDrug_DrugCreatedSuccessfully()
         {
-            var newDrug = new Drug { Id = 123, Ndc = "1234asdf", Name = "Test Drug", PackSize = 2, Unit = Unit.MediumPack, Price = 1.23m };
+            int newDrugId = 123;
+            var newDrug = new DrugDto { Ndc = "1234asdf", Name = "Test Drug", PackSize = 2, Unit = Unit.MediumPack, Price = 1.23m };
 
             var mockRepository = Substitute.For<IRepository>();
-            mockRepository.CreateDrug(newDrug).Returns(newDrug.Id);
             mockRepository.IsDrugExists(newDrug.Ndc).Returns(false);
-            mockRepository.IsDrugExists(newDrug.Id).Returns(false);
-            var controller = new DrugsController(mockRepository);
+            mockRepository.CreateDrug(_mapper.Map<Drug>(newDrug)).ReturnsForAnyArgs(newDrugId);
+            var controller = new DrugsController(_mapper, mockRepository);
 
             var postResult = await controller.PostDrug(newDrug);
 
             var createdResult = Assert.IsType<CreatedAtActionResult>(postResult.Result);
-            Assert.Equal(newDrug.Id, createdResult.Value);
+            Assert.Equal(newDrugId, createdResult.Value);
         }
 
         [Fact]
         public async Task PostDrug_DrugWithNdcAlreadyExists()
         {
-            var newDrug = new Drug { Id = 123, Ndc = "11111111", Name = "Test Drug", PackSize = 2, Unit = Unit.MediumPack, Price = 1.23m };
+            var newDrug = new DrugDto { Ndc = "11111111", Name = "Test Drug", PackSize = 2, Unit = Unit.MediumPack, Price = 1.23m };
 
             var mockRepository = Substitute.For<IRepository>();
             mockRepository.IsDrugExists(newDrug.Ndc).Returns(true);
-            mockRepository.IsDrugExists(newDrug.Id).Returns(false);
-            var controller = new DrugsController(mockRepository);
+            var controller = new DrugsController(_mapper, mockRepository);
 
             var postResult = await controller.PostDrug(newDrug);
 
@@ -139,7 +151,7 @@ namespace DrugsManager.Tests
             var mockRepository = Substitute.For<IRepository>();
             mockRepository.DeleteDrug(DefaultDrugsList[0].Id).Returns(DefaultDrugsList[0]);
             mockRepository.IsDrugExists(DefaultDrugsList[0].Id).Returns(true, false);
-            var controller = new DrugsController(mockRepository);
+            var controller = new DrugsController(_mapper, mockRepository);
 
             var deleteResult = await controller.DeleteDrug(DefaultDrugsList[0].Id);
 
@@ -151,7 +163,7 @@ namespace DrugsManager.Tests
         {
             var mockRepository = Substitute.For<IRepository>();
             mockRepository.IsDrugExists(DefaultDrugsList[0].Id).Returns(false);
-            var controller = new DrugsController(mockRepository);
+            var controller = new DrugsController(_mapper, mockRepository);
 
             var deleteResult = await controller.DeleteDrug(DefaultDrugsList[0].Id);
 
@@ -164,7 +176,7 @@ namespace DrugsManager.Tests
             var mockRepository = Substitute.For<IRepository>();
             mockRepository.DeleteDrug(DefaultDrugsList[0].Id).Returns(DefaultDrugsList[0]);
             mockRepository.IsDrugExists(DefaultDrugsList[0].Id).Returns(true, true);
-            var controller = new DrugsController(mockRepository);
+            var controller = new DrugsController(_mapper, mockRepository);
 
             var deleteResult = await controller.DeleteDrug(DefaultDrugsList[0].Id);
 
