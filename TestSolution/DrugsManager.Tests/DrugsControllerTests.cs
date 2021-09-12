@@ -1,8 +1,8 @@
 ﻿using DrugsManager.Controllers;
 using DrugsManager.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using NSubstitute;
-using System;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -85,39 +85,19 @@ namespace DrugsManager.Tests
         }
 
         [Fact]
-        public async Task PutDrug_ArgumentExceptionDrugNotFound()
+        public async Task PutDrug_DbUpdateConcurrencyExceptionDrugNotFound()
         {
             var updatedDrug = new Drug { Id = DefaultDrugsList[0].Id, Ndc = "11111111", Name = "Test Drug", PackSize = 2, Unit = Unit.MediumPack, Price = 1.23m };
 
             var mockRepository = Substitute.For<IRepository>();
-            mockRepository.UpdateDrug(updatedDrug).Returns(Task.FromException<Drug>(new ArgumentException($"No drug with Id [{DefaultDrugsList[0].Id}].")));
-            mockRepository.IsDrugExists(DefaultDrugsList[0].Id).Returns(true);
+            mockRepository.UpdateDrug(updatedDrug).Returns(Task.FromException<Drug>(new DbUpdateConcurrencyException()));
+            mockRepository.IsDrugExists(DefaultDrugsList[0].Id).Returns(true, false);
             mockRepository.IsDrugExists("11111111").Returns(true);
             var controller = new DrugsController(mockRepository);
 
             var putResult = await controller.PutDrug(updatedDrug, "11111111");
 
-            var badResult = Assert.IsType<BadRequestObjectResult>(putResult);
-            Assert.Equal($"No drug with Id [{DefaultDrugsList[0].Id}].", badResult.Value);
-        }
-
-        [Fact]
-        public async Task PutDrug_ModelStateIsInvalid()
-        {
-            var updatedDrug = new Drug { Id = DefaultDrugsList[0].Id, Name = "Test Drug", PackSize = 2, Unit = Unit.MediumPack, Price = 1.23m };
-            var expected = new SerializableError
-            {
-                { "Ndc", new[] {"Required"}},
-            };
-
-            var mockRepository = Substitute.For<IRepository>();
-            var controller = new DrugsController(mockRepository);
-            controller.ModelState.AddModelError("Ndc", "Required");
-
-            var putResult = await controller.PutDrug(updatedDrug, "11111111");
-
-            var badResult = Assert.IsType<BadRequestObjectResult>(putResult);
-            Assert.Equal(expected, badResult.Value);
+            Assert.IsType<NotFoundResult>(putResult);
         }
 
         [Fact]
@@ -154,58 +134,6 @@ namespace DrugsManager.Tests
         }
 
         [Fact]
-        public async Task PostDrug_DrugWithIdAlreadyExists()
-        {
-            var newDrug = new Drug { Id = 111, Ndc = "1234asdf", Name = "Test Drug", PackSize = 2, Unit = Unit.MediumPack, Price = 1.23m };
-
-            var mockRepository = Substitute.For<IRepository>();
-            mockRepository.IsDrugExists(newDrug.Ndc).Returns(false);
-            mockRepository.IsDrugExists(newDrug.Id).Returns(true);
-            var controller = new DrugsController(mockRepository);
-
-            var postResult = await controller.PostDrug(newDrug);
-
-            var badResult = Assert.IsType<BadRequestObjectResult>(postResult.Result);
-            Assert.Equal("Drug with this Id already exists", badResult.Value);
-        }
-
-        [Fact]
-        public async Task PostDrug_ArgumentExceptionDrugAlreadyExists()
-        {
-            var newDrug = new Drug { Id = 111, Ndc = "1234asdf", Name = "Test Drug", PackSize = 2, Unit = Unit.MediumPack, Price = 1.23m };
-
-            var mockRepository = Substitute.For<IRepository>();
-            mockRepository.CreateDrug(newDrug).Returns(Task.FromException<int>(new ArgumentException($"Drug with Id [{newDrug.Id}] already exists.")));
-            mockRepository.IsDrugExists(newDrug.Ndc).Returns(false);
-            mockRepository.IsDrugExists(newDrug.Id).Returns(false);
-            var controller = new DrugsController(mockRepository);
-
-            var postResult = await controller.PostDrug(newDrug);
-
-            var badResult = Assert.IsType<BadRequestObjectResult>(postResult.Result);
-            Assert.Equal($"Drug with Id [{newDrug.Id}] already exists.", badResult.Value);
-        }
-
-        [Fact]
-        public async Task PostDrug_ModelStateIsInvalid()
-        {
-            var newDrug = new Drug { Id = 111, Ndc = "1234asdf", Name = "Test Drug", Unit = Unit.MediumPack, Price = 1.23m };
-            var expected = new SerializableError
-            {
-                { "PackSize", new[] {"Required"}},
-            };
-
-            var mockRepository = Substitute.For<IRepository>();
-            var controller = new DrugsController(mockRepository);
-            controller.ModelState.AddModelError("PackSize", "Required");
-
-            var postResult = await controller.PostDrug(newDrug);
-
-            var badResult = Assert.IsType<BadRequestObjectResult>(postResult.Result);
-            Assert.Equal(expected, badResult.Value);
-        }
-
-        [Fact]
         public async Task DeleteDrug_DrugDeletedSuccessfully()
         {
             var mockRepository = Substitute.For<IRepository>();
@@ -228,21 +156,6 @@ namespace DrugsManager.Tests
             var deleteResult = await controller.DeleteDrug(DefaultDrugsList[0].Id);
 
             Assert.IsType<NotFoundResult>(deleteResult.Result);
-        }
-
-        [Fact]
-        public async Task DeleteDrug_ArgumentExceptionDrugNotExists()
-        {
-            var mockRepository = Substitute.For<IRepository>();
-            mockRepository.DeleteDrug(DefaultDrugsList[0].Id)
-                .Returns(Task.FromException<Drug>(new ArgumentException($"No drug with Id [{DefaultDrugsList[0].Id}].")));
-            mockRepository.IsDrugExists(DefaultDrugsList[0].Id).Returns(true);
-            var controller = new DrugsController(mockRepository);
-
-            var deleteResult = await controller.DeleteDrug(DefaultDrugsList[0].Id);
-
-            var badResult = Assert.IsType<BadRequestObjectResult>(deleteResult.Result);
-            Assert.Equal($"No drug with Id [{DefaultDrugsList[0].Id}].", badResult.Value);
         }
 
         [Fact]
