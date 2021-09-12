@@ -44,7 +44,7 @@ namespace DrugsManager.Attributes
             }
             if (afterDot > _maxDigitsAfterDot)
             {
-                ErrorMessage = $"{ErrorMessage} Maximal number of digits before dot is {_maxDigitsAfterDot};";
+                ErrorMessage = $"{ErrorMessage} Maximal number of digits after dot is {_maxDigitsAfterDot};";
                 result = false;
             }
             if ((decimal)value < 0 && !_allowNegative)
