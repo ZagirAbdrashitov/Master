@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DrugsManager.Models;
+using AutoMapper;
 
 namespace DrugsManager.Controllers
 {
@@ -10,10 +11,12 @@ namespace DrugsManager.Controllers
     [Route("api/[controller]")]
     public class DrugsController : ControllerBase
     {
+        private readonly IMapper _mapper;
         private readonly IRepository _repository;
 
-        public DrugsController(IRepository repository)
+        public DrugsController(IMapper mapper, IRepository repository)
         {
+            _mapper = mapper;
             _repository = repository;
         }
 
@@ -61,14 +64,15 @@ namespace DrugsManager.Controllers
 
         // POST: api/Drugs
         [HttpPost]
-        public async Task<ActionResult<Drug>> PostDrug(Drug drug)
+        public async Task<ActionResult<Drug>> PostDrug(DrugDto drug)
         {
             if (_repository.IsDrugExists(drug.Ndc))
             {
                 return BadRequest("Drug with this NDC already exists");
             }
 
-            var result = await _repository.CreateDrug(drug);
+            var newDrug = _mapper.Map<Drug>(drug);
+            var result = await _repository.CreateDrug(newDrug);
 
             return CreatedAtAction("GetDrug", result);
         }
