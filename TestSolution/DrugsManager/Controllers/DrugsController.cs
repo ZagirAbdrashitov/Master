@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DrugsManager.Models;
-using System;
 
 namespace DrugsManager.Controllers
 {
@@ -29,10 +28,6 @@ namespace DrugsManager.Controllers
         [HttpPut("{previousNdc}")]
         public async Task<IActionResult> PutDrug(Drug drug, string previousNdc)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
             if (_repository.IsDrugExists(drug.Id))
             {
                 if (!previousNdc.Equals(drug.Ndc) && _repository.IsDrugExists(drug.Ndc))
@@ -60,10 +55,6 @@ namespace DrugsManager.Controllers
                     throw;
                 }
             }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
 
             return Ok();
         }
@@ -72,29 +63,14 @@ namespace DrugsManager.Controllers
         [HttpPost]
         public async Task<ActionResult<Drug>> PostDrug(Drug drug)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
             if (_repository.IsDrugExists(drug.Ndc))
             {
                 return BadRequest("Drug with this NDC already exists");
             }
-            if (_repository.IsDrugExists(drug.Id))
-            {
-                return BadRequest("Drug with this Id already exists");
-            }
 
-            try
-            {
-                var result = await _repository.CreateDrug(drug);
+            var result = await _repository.CreateDrug(drug);
 
-                return CreatedAtAction("GetDrug", result);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return CreatedAtAction("GetDrug", result);
         }
 
         // DELETE: api/Drugs/5
@@ -106,14 +82,7 @@ namespace DrugsManager.Controllers
                 return NotFound();
             }
 
-            try
-            {
-                await _repository.DeleteDrug(id);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            await _repository.DeleteDrug(id);
 
             if (!_repository.IsDrugExists(id))
             {
